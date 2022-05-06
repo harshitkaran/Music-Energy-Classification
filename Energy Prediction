@@ -1,0 +1,2011 @@
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "AQ-VWXXM-tC1"
+      },
+      "outputs": [],
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "df = pd.read_csv('Music3000.csv')\n",
+        "print(df) "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "IJsraM6jrSvi",
+        "outputId": "4ec0d82b-084d-4b99-ec77-0a7f58096981"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Mounted at /content/drive\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "MbGQf21r-tC2"
+      },
+      "outputs": [],
+      "source": [
+        "from keras.models import Sequential, Model \n",
+        "from keras.layers import Conv2D, MaxPooling2D\n",
+        "from keras.layers import Activation, Dropout, Flatten, Dense,BatchNormalization\n",
+        "from keras.callbacks import ModelCheckpoint  \n",
+        "from keras.callbacks import EarlyStopping\n",
+        "from keras import applications\n",
+        "from tensorflow.keras.optimizers import Adam"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "qoF_qGMl-tC2"
+      },
+      "outputs": [],
+      "source": [
+        "map={}"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "VgnaTZPu-tC3"
+      },
+      "outputs": [],
+      "source": [
+        "for i in range(len(df)) :\n",
+        "  s = df.loc[i, \"Title\"]\n",
+        "  s=s+'.wav'\n",
+        "  #print(s)\n",
+        "  map[s]= df.loc[i, \"Energy\"]-1"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "KluKyhTE-tC3"
+      },
+      "outputs": [],
+      "source": [
+        "map"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "7AgwEKJqWObk"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.decomposition import PCA"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "G9HSlwsG5hzM"
+      },
+      "outputs": [],
+      "source": [
+        "df = pd.read_csv('Kaggle1000.csv')\n",
+        "print(df) "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "k0ibum_15nDT"
+      },
+      "outputs": [],
+      "source": [
+        "for i in range(len(df)) :\n",
+        "  s = df.loc[i, \"Title\"]\n",
+        "  s=s+'.wav'\n",
+        "  #print(s)\n",
+        "  map[s]= df.loc[i, \"Energy\"]-1"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "m1m5ozad-tC4"
+      },
+      "outputs": [],
+      "source": [
+        "import librosa\n",
+        "#Basic imports\n",
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "\n",
+        "#sklearn imports\n",
+        "from sklearn.decomposition import PCA #Principal Component Analysis\n",
+        "from sklearn.manifold import TSNE #T-Distributed Stochastic Neighbor Embedding\n",
+        "from sklearn.cluster import KMeans #K-Means Clustering\n",
+        "from sklearn.preprocessing import StandardScaler #used for 'Feature Scaling'\n",
+        "\n",
+        "#plotly imports\n",
+        "import plotly as py\n",
+        "import plotly.graph_objs as go\n",
+        "from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot\n",
+        "from sklearn.decomposition import PCA\n",
+        "#audio_path = 'sample-6s.mp3'\n",
+        "#x , sr = librosa.load(audio_path)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "KA7B5FtP-tC4"
+      },
+      "outputs": [],
+      "source": [
+        "def readAudio(path):\n",
+        "  x , sr = librosa.load(path)\n",
+        "  return x,sr"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "LqsjW1-X-tC4"
+      },
+      "outputs": [],
+      "source": [
+        "import os\n",
+        "from scipy.stats import kurtosis\n",
+        "from scipy.stats import skew\n",
+        "\n",
+        "path = \"drive/MyDrive/MusicFiles\"\n",
+        "list_dir=[file for file in os.listdir(path)]\n",
+        "extracted_features=[]\n",
+        "names=[]\n",
+        "energy=[]\n",
+        "#extracted_features = np.zeros(shape=(20,1200))\n",
+        "maxi=0\n",
+        "i=0\n",
+        "for fname in list_dir:\n",
+        "  #x , sr = librosa.load(path+'/'+fname)\n",
+        "  print(fname)\n",
+        "  x, sr= readAudio(path+'/'+fname)\n",
+        "  names.append(fname)\n",
+        "  energy.append(map[fname])\n",
+        "\n",
+        "  mfcc = librosa.feature.mfcc(x, sr).ravel()\n",
+        "  spectogram =librosa.feature.melspectrogram(x, sr).ravel()\n",
+        "\n",
+        "  featureLists=[]\n",
+        "  for x in mfcc:\n",
+        "    featureLists.append(x)\n",
+        "  \n",
+        "  # for x in spectogram:\n",
+        "  #   featureLists.append(x)\n",
+        "\n",
+        "  extracted_features.append(featureLists)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "n5AQmP3K-tC4",
+        "outputId": "b11c2e6e-cd28-41e3-b3bc-fb87e96c2fa0"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "999"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 14
+        }
+      ],
+      "source": [
+        "len(extracted_features)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "5SDxTmHm-tC4"
+      },
+      "outputs": [],
+      "source": [
+        "import os\n",
+        "from scipy.stats import kurtosis\n",
+        "from scipy.stats import skew\n",
+        "\n",
+        "path = \"drive/MyDrive/Music3000\"\n",
+        "list_dir=[file for file in os.listdir(path)]\n",
+        "\n",
+        "\n",
+        "i=0\n",
+        "for fname in list_dir:\n",
+        "  print(fname)\n",
+        "  print(i)\n",
+        "  i+=1\n",
+        "  #x , sr = librosa.load(path+'/'+fname)\n",
+        "  x, sr= readAudio(path+'/'+fname)\n",
+        "  names.append(fname)\n",
+        "  energy.append(map[fname])\n",
+        "\n",
+        "  mfcc = librosa.feature.mfcc(x, sr).ravel()\n",
+        "  spectogram =librosa.feature.melspectrogram(x, sr).ravel()\n",
+        "\n",
+        "  featureLists=[]\n",
+        "  for x in mfcc:\n",
+        "    featureLists.append(x)\n",
+        "  \n",
+        "  # for x in spectogram:\n",
+        "  #   featureLists.append(x)\n",
+        "\n",
+        "  extracted_features.append(featureLists)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "WPNE7jqh_X79",
+        "outputId": "7d47a4a7-7b47-4e2b-92bb-65782ffe421a"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "4022"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 16
+        }
+      ],
+      "source": [
+        "len(extracted_features)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "FnGZhcpdnPMJ"
+      },
+      "outputs": [],
+      "source": [
+        "extracted_features"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "KL8XkZKZV2Qs"
+      },
+      "outputs": [],
+      "source": [
+        "def _pca(extracted_features):\n",
+        "  df = pd.DataFrame(extracted_features)\n",
+        "  \n",
+        "  pca = PCA(n_components=0.99)\n",
+        "  principal_features = pca.fit_transform(df)\n",
+        "  df = pd.DataFrame(principal_features)\n",
+        "  return df"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "lT-Mj_pjnbmE"
+      },
+      "outputs": [],
+      "source": [
+        "df = pd.DataFrame(extracted_features)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 488
+        },
+        "id": "wS3IMmVGnfaw",
+        "outputId": "6766f54e-7461-4303-fe1b-b7c41d12b16d"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "           0           1           2           3           4           5      \\\n",
+              "0    -312.902496 -223.677536 -156.065277 -148.910675 -180.661697 -223.887665   \n",
+              "1    -147.440201 -159.390244 -165.219391 -143.906158 -116.347809  -92.205200   \n",
+              "2     -60.031979  -80.821854 -125.283424 -141.400345 -155.629639 -172.214249   \n",
+              "3    -187.644531 -196.836212 -213.412231 -220.421722 -233.713806 -240.523788   \n",
+              "4    -202.784225 -206.466675 -213.050186 -218.170746 -232.378265 -255.918793   \n",
+              "...          ...         ...         ...         ...         ...         ...   \n",
+              "4017 -460.009369 -290.940552 -245.470367 -285.145233 -334.195892 -202.109512   \n",
+              "4018 -522.682251 -266.115356  -26.063904    5.487676  -81.227287 -176.899765   \n",
+              "4019 -450.574860 -283.694336 -200.825012 -169.845520 -163.367767 -169.336151   \n",
+              "4020 -559.939453 -559.939453 -559.939453 -559.939453 -559.939453 -559.939453   \n",
+              "4021 -313.274231 -311.246277 -308.719299 -275.638092 -270.805786 -278.659821   \n",
+              "\n",
+              "           6           7           8           9      ...  26390  26391  \\\n",
+              "0    -264.082031 -298.813690 -312.372009 -322.293243  ...    NaN    NaN   \n",
+              "1    -101.262520 -139.664673 -159.143677 -165.642944  ...    NaN    NaN   \n",
+              "2    -185.555389 -190.768372 -183.312836 -176.491745  ...    NaN    NaN   \n",
+              "3    -246.085678 -259.390839 -270.888367 -275.427917  ...    NaN    NaN   \n",
+              "4    -274.718597 -280.951447 -246.690628 -103.939064  ...    NaN    NaN   \n",
+              "...          ...         ...         ...         ...  ...    ...    ...   \n",
+              "4017 -173.058441 -214.633636 -140.352478  -95.879509  ...    NaN    NaN   \n",
+              "4018 -205.246399 -224.568115 -271.071136 -305.739746  ...    NaN    NaN   \n",
+              "4019 -187.257309 -204.208755 -230.888702 -225.183167  ...    NaN    NaN   \n",
+              "4020 -559.939453 -559.939453 -559.939453 -559.939453  ...    NaN    NaN   \n",
+              "4021 -280.631958 -275.514465 -272.147125 -271.979065  ...    NaN    NaN   \n",
+              "\n",
+              "      26392  26393  26394  26395  26396  26397  26398  26399  \n",
+              "0       NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "1       NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "2       NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "3       NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "4       NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "...     ...    ...    ...    ...    ...    ...    ...    ...  \n",
+              "4017    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "4018    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "4019    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "4020    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "4021    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN  \n",
+              "\n",
+              "[4022 rows x 26400 columns]"
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-2bea8ac0-f767-4f07-8884-8ad5cc82f43e\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>0</th>\n",
+              "      <th>1</th>\n",
+              "      <th>2</th>\n",
+              "      <th>3</th>\n",
+              "      <th>4</th>\n",
+              "      <th>5</th>\n",
+              "      <th>6</th>\n",
+              "      <th>7</th>\n",
+              "      <th>8</th>\n",
+              "      <th>9</th>\n",
+              "      <th>...</th>\n",
+              "      <th>26390</th>\n",
+              "      <th>26391</th>\n",
+              "      <th>26392</th>\n",
+              "      <th>26393</th>\n",
+              "      <th>26394</th>\n",
+              "      <th>26395</th>\n",
+              "      <th>26396</th>\n",
+              "      <th>26397</th>\n",
+              "      <th>26398</th>\n",
+              "      <th>26399</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>-312.902496</td>\n",
+              "      <td>-223.677536</td>\n",
+              "      <td>-156.065277</td>\n",
+              "      <td>-148.910675</td>\n",
+              "      <td>-180.661697</td>\n",
+              "      <td>-223.887665</td>\n",
+              "      <td>-264.082031</td>\n",
+              "      <td>-298.813690</td>\n",
+              "      <td>-312.372009</td>\n",
+              "      <td>-322.293243</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>-147.440201</td>\n",
+              "      <td>-159.390244</td>\n",
+              "      <td>-165.219391</td>\n",
+              "      <td>-143.906158</td>\n",
+              "      <td>-116.347809</td>\n",
+              "      <td>-92.205200</td>\n",
+              "      <td>-101.262520</td>\n",
+              "      <td>-139.664673</td>\n",
+              "      <td>-159.143677</td>\n",
+              "      <td>-165.642944</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>-60.031979</td>\n",
+              "      <td>-80.821854</td>\n",
+              "      <td>-125.283424</td>\n",
+              "      <td>-141.400345</td>\n",
+              "      <td>-155.629639</td>\n",
+              "      <td>-172.214249</td>\n",
+              "      <td>-185.555389</td>\n",
+              "      <td>-190.768372</td>\n",
+              "      <td>-183.312836</td>\n",
+              "      <td>-176.491745</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>-187.644531</td>\n",
+              "      <td>-196.836212</td>\n",
+              "      <td>-213.412231</td>\n",
+              "      <td>-220.421722</td>\n",
+              "      <td>-233.713806</td>\n",
+              "      <td>-240.523788</td>\n",
+              "      <td>-246.085678</td>\n",
+              "      <td>-259.390839</td>\n",
+              "      <td>-270.888367</td>\n",
+              "      <td>-275.427917</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>-202.784225</td>\n",
+              "      <td>-206.466675</td>\n",
+              "      <td>-213.050186</td>\n",
+              "      <td>-218.170746</td>\n",
+              "      <td>-232.378265</td>\n",
+              "      <td>-255.918793</td>\n",
+              "      <td>-274.718597</td>\n",
+              "      <td>-280.951447</td>\n",
+              "      <td>-246.690628</td>\n",
+              "      <td>-103.939064</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4017</th>\n",
+              "      <td>-460.009369</td>\n",
+              "      <td>-290.940552</td>\n",
+              "      <td>-245.470367</td>\n",
+              "      <td>-285.145233</td>\n",
+              "      <td>-334.195892</td>\n",
+              "      <td>-202.109512</td>\n",
+              "      <td>-173.058441</td>\n",
+              "      <td>-214.633636</td>\n",
+              "      <td>-140.352478</td>\n",
+              "      <td>-95.879509</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4018</th>\n",
+              "      <td>-522.682251</td>\n",
+              "      <td>-266.115356</td>\n",
+              "      <td>-26.063904</td>\n",
+              "      <td>5.487676</td>\n",
+              "      <td>-81.227287</td>\n",
+              "      <td>-176.899765</td>\n",
+              "      <td>-205.246399</td>\n",
+              "      <td>-224.568115</td>\n",
+              "      <td>-271.071136</td>\n",
+              "      <td>-305.739746</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4019</th>\n",
+              "      <td>-450.574860</td>\n",
+              "      <td>-283.694336</td>\n",
+              "      <td>-200.825012</td>\n",
+              "      <td>-169.845520</td>\n",
+              "      <td>-163.367767</td>\n",
+              "      <td>-169.336151</td>\n",
+              "      <td>-187.257309</td>\n",
+              "      <td>-204.208755</td>\n",
+              "      <td>-230.888702</td>\n",
+              "      <td>-225.183167</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4020</th>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>-559.939453</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4021</th>\n",
+              "      <td>-313.274231</td>\n",
+              "      <td>-311.246277</td>\n",
+              "      <td>-308.719299</td>\n",
+              "      <td>-275.638092</td>\n",
+              "      <td>-270.805786</td>\n",
+              "      <td>-278.659821</td>\n",
+              "      <td>-280.631958</td>\n",
+              "      <td>-275.514465</td>\n",
+              "      <td>-272.147125</td>\n",
+              "      <td>-271.979065</td>\n",
+              "      <td>...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>4022 rows × 26400 columns</p>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-2bea8ac0-f767-4f07-8884-8ad5cc82f43e')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-2bea8ac0-f767-4f07-8884-8ad5cc82f43e button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-2bea8ac0-f767-4f07-8884-8ad5cc82f43e');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 19
+        }
+      ],
+      "source": [
+        "df"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df = df.fillna(0)\n",
+        "df = df.replace([np.inf, -np.inf], 0)"
+      ],
+      "metadata": {
+        "id": "fK7y0ztQDFhM"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "XBzeYzJOnlxE"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.decomposition import PCA\n",
+        "pca = PCA(n_components=0.99)\n",
+        "principal_features = pca.fit_transform(df)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "CYEnHgAioLTc"
+      },
+      "outputs": [],
+      "source": [
+        "principal_features"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "nXCItY87oPpL"
+      },
+      "outputs": [],
+      "source": [
+        "df = pd.DataFrame(principal_features)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "F9x-hnGaofFR",
+        "outputId": "2ac6fc32-ec8e-4907-ebf6-69fefc9d9d02"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(4022, 2017)"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 25
+        }
+      ],
+      "source": [
+        "principal_features.shape"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "FuAJ7Oz3oh0i"
+      },
+      "outputs": [],
+      "source": [
+        "pr"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "vkZ3UV-3nRVK"
+      },
+      "outputs": [],
+      "source": [
+        ""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "IXOLlioRnOWD"
+      },
+      "outputs": [],
+      "source": [
+        ""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "jfTrqEpPU_Lv"
+      },
+      "outputs": [],
+      "source": [
+        "# extracted_features = np.stack(extracted_features)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "nljDPNtZZc9X",
+        "outputId": "49775d17-e99c-45e4-d32e-9da3c594056d"
+      },
+      "outputs": [
+        {
+          "data": {
+            "text/plain": [
+              "(4022, 20, 1200)"
+            ]
+          },
+          "execution_count": 14,
+          "metadata": {},
+          "output_type": "execute_result"
+        }
+      ],
+      "source": [
+        "extracted_features.shape"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "hcMVbTngOA4k",
+        "outputId": "9542f04a-b930-4c3b-fa81-97148a14d673"
+      },
+      "outputs": [
+        {
+          "data": {
+            "text/plain": [
+              "4022"
+            ]
+          },
+          "execution_count": 15,
+          "metadata": {},
+          "output_type": "execute_result"
+        }
+      ],
+      "source": [
+        "len(energy)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "DCq9eMEMeKsj"
+      },
+      "outputs": [],
+      "source": [
+        "energy = np.array(energy)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "AWTqSfWEQNkq"
+      },
+      "outputs": [],
+      "source": [
+        "X= df\n",
+        "y= energy\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "X.shape"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "T2ERA-51FHei",
+        "outputId": "7e82f51b-e52e-4728-c5cc-9d97a3ec22f2"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(4022, 2017)"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 31
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "We4uCy8nQQs8"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "2tU0W9_0FL_i"
+      },
+      "outputs": [],
+      "source": [
+        "import tensorflow.keras as keras\n",
+        "def build_model(input_shape):\n",
+        "    \"\"\"Generates CNN model\n",
+        "    :param input_shape (tuple): Shape of input set\n",
+        "    :return model: CNN model\n",
+        "    \"\"\"\n",
+        "\n",
+        "    # build network topology\n",
+        "    model = keras.Sequential()\n",
+        "\n",
+        "    # 1st conv layer\n",
+        "    model.add(keras.layers.Conv1D(32, 3, activation='relu', input_shape=input_shape))\n",
+        "    model.add(keras.layers.MaxPooling1D(3, strides=2, padding='same'))\n",
+        "    model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # 2nd conv layer\n",
+        "    # model.add(keras.layers.Conv2D(32, (3, 3), activation='relu'))\n",
+        "    # model.add(keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same'))\n",
+        "    # model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # 3rd conv layer\n",
+        "    model.add(keras.layers.Conv1D(32, 2, activation='relu'))\n",
+        "    model.add(keras.layers.MaxPooling1D(2, strides=2, padding='same'))\n",
+        "    # model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # flatten output and feed it into dense layer\n",
+        "    model.add(keras.layers.Flatten())\n",
+        "    model.add(keras.layers.Dense(64, activation='relu'))\n",
+        "    model.add(keras.layers.Dropout(0.3))\n",
+        "\n",
+        "    # output layer\n",
+        "    model.add(keras.layers.Dense(10, activation='softmax'))\n",
+        "\n",
+        "    return model"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ozYPt5QMdWRu",
+        "outputId": "db065e69-50ff-4ac6-cd48-7bcc6fe4f02b"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"sequential\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " conv1d (Conv1D)             (None, 2015, 32)          128       \n",
+            "                                                                 \n",
+            " max_pooling1d (MaxPooling1D  (None, 1008, 32)         0         \n",
+            " )                                                               \n",
+            "                                                                 \n",
+            " batch_normalization (BatchN  (None, 1008, 32)         128       \n",
+            " ormalization)                                                   \n",
+            "                                                                 \n",
+            " conv1d_1 (Conv1D)           (None, 1007, 32)          2080      \n",
+            "                                                                 \n",
+            " max_pooling1d_1 (MaxPooling  (None, 504, 32)          0         \n",
+            " 1D)                                                             \n",
+            "                                                                 \n",
+            " flatten (Flatten)           (None, 16128)             0         \n",
+            "                                                                 \n",
+            " dense (Dense)               (None, 64)                1032256   \n",
+            "                                                                 \n",
+            " dropout (Dropout)           (None, 64)                0         \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 10)                650       \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 1,035,242\n",
+            "Trainable params: 1,035,178\n",
+            "Non-trainable params: 64\n",
+            "_________________________________________________________________\n"
+          ]
+        }
+      ],
+      "source": [
+        "input_shape = (2017, 1) #0,1,2,3 \n",
+        "model = build_model(input_shape)\n",
+        "\n",
+        "# compile model\n",
+        "optimiser = keras.optimizers.Adam(learning_rate=0.0001)\n",
+        "model.compile(optimizer=optimiser, loss='sparse_categorical_crossentropy', metrics=['accuracy'])\n",
+        "\n",
+        "model.summary()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        ""
+      ],
+      "metadata": {
+        "id": "JQhgyTTsFGHl"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "4HXRzaHIXjMk"
+      },
+      "outputs": [],
+      "source": [
+        "import os"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "t9dbmZ08Un8c"
+      },
+      "outputs": [],
+      "source": [
+        "def generateXY(path, start, end):\n",
+        "  list_dir=[file for file in os.listdir(path)]\n",
+        "\n",
+        "  i=0\n",
+        "  energy=[]\n",
+        "  extracted_features=[]\n",
+        "  for fname in list_dir:\n",
+        "    if i<0 or i>end:\n",
+        "      continue\n",
+        "\n",
+        "    print(fname)\n",
+        "    print(i)\n",
+        "    #x , sr = librosa.load(path+'/'+fname)\n",
+        "    x, sr= readAudio(path+'/'+fname)\n",
+        "    # names.append(fname)\n",
+        "    energy.append(map[fname])\n",
+        "\n",
+        "    mfcc = librosa.feature.mfcc(x, sr).ravel()\n",
+        "    spectogram =librosa.feature.melspectrogram(x, sr).ravel()\n",
+        "\n",
+        "    featureLists=[]\n",
+        "    for x in mfcc:\n",
+        "      featureLists.append(x)\n",
+        "  \n",
+        "    for x in spectogram:\n",
+        "      featureLists.append(x)\n",
+        "\n",
+        "    extracted_features.append(featureLists)\n",
+        "    i+=1\n",
+        "\n",
+        "  return extracted_features, energy"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "hJYfZfwKS56E"
+      },
+      "outputs": [],
+      "source": [
+        "def dataLoader(files, batch_size):\n",
+        "    # path = \"drive/MyDrive/Music3000\"\n",
+        "    list_dir=[file for file in os.listdir(files)]\n",
+        "    L = len(list_dir)\n",
+        "    i1=0\n",
+        "    i2=0\n",
+        "    #this line is just to make the generator infinite, keras needs that    \n",
+        "    while True:\n",
+        "        i1=i1+1\n",
+        "        print(i1,\".\")\n",
+        "        batch_start = 0\n",
+        "        batch_end = batch_start + batch_size\n",
+        "\n",
+        "        while batch_start < L:\n",
+        "            print(i2,\"..\")\n",
+        "            i2=i2+1\n",
+        "            limit = min(batch_end, L)\n",
+        "            extracted_features, energy = generateXY(files, batch_start, limit)\n",
+        "            X = _pca(extracted_features)\n",
+        "            Y =  np.array(energy)\n",
+        "\n",
+        "            batch_start += batch_size   \n",
+        "            batch_end += batch_size\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "84eA3x-jFF6O",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "466a1500-bd76-40ea-868a-b863d95abb89"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/100\n",
+            "81/81 [==============================] - ETA: 0s - loss: 1.9516 - accuracy: 0.2686\n",
+            "Epoch 1: val_loss improved from inf to 1.79579, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 13s 36ms/step - loss: 1.9516 - accuracy: 0.2686 - val_loss: 1.7958 - val_accuracy: 0.3276\n",
+            "Epoch 2/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 1.7085 - accuracy: 0.3580\n",
+            "Epoch 2: val_loss improved from 1.79579 to 1.57941, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.7093 - accuracy: 0.3560 - val_loss: 1.5794 - val_accuracy: 0.4301\n",
+            "Epoch 3/100\n",
+            "76/81 [===========================>..] - ETA: 0s - loss: 1.5828 - accuracy: 0.3935\n",
+            "Epoch 3: val_loss improved from 1.57941 to 1.51547, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.5805 - accuracy: 0.3945 - val_loss: 1.5155 - val_accuracy: 0.4565\n",
+            "Epoch 4/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 1.4646 - accuracy: 0.4468\n",
+            "Epoch 4: val_loss improved from 1.51547 to 1.45357, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.4682 - accuracy: 0.4450 - val_loss: 1.4536 - val_accuracy: 0.4689\n",
+            "Epoch 5/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 1.3558 - accuracy: 0.4896\n",
+            "Epoch 5: val_loss improved from 1.45357 to 1.42930, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.3567 - accuracy: 0.4901 - val_loss: 1.4293 - val_accuracy: 0.4565\n",
+            "Epoch 6/100\n",
+            "76/81 [===========================>..] - ETA: 0s - loss: 1.2901 - accuracy: 0.5090\n",
+            "Epoch 6: val_loss improved from 1.42930 to 1.40801, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.2828 - accuracy: 0.5119 - val_loss: 1.4080 - val_accuracy: 0.4658\n",
+            "Epoch 7/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 1.1968 - accuracy: 0.5529\n",
+            "Epoch 7: val_loss improved from 1.40801 to 1.39359, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.1983 - accuracy: 0.5519 - val_loss: 1.3936 - val_accuracy: 0.4736\n",
+            "Epoch 8/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 1.1481 - accuracy: 0.5625\n",
+            "Epoch 8: val_loss improved from 1.39359 to 1.39020, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.1417 - accuracy: 0.5670 - val_loss: 1.3902 - val_accuracy: 0.4814\n",
+            "Epoch 9/100\n",
+            "76/81 [===========================>..] - ETA: 0s - loss: 1.0592 - accuracy: 0.6316\n",
+            "Epoch 9: val_loss improved from 1.39020 to 1.38663, saving model to weights.best.from_scratch_last_layers.hdf5\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 1.0588 - accuracy: 0.6284 - val_loss: 1.3866 - val_accuracy: 0.4783\n",
+            "Epoch 10/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 0.9905 - accuracy: 0.6489\n",
+            "Epoch 10: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 0.9860 - accuracy: 0.6518 - val_loss: 1.4028 - val_accuracy: 0.4783\n",
+            "Epoch 11/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 0.9067 - accuracy: 0.6851\n",
+            "Epoch 11: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.9056 - accuracy: 0.6844 - val_loss: 1.3984 - val_accuracy: 0.4767\n",
+            "Epoch 12/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 0.8711 - accuracy: 0.7087\n",
+            "Epoch 12: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.8706 - accuracy: 0.7093 - val_loss: 1.4170 - val_accuracy: 0.4581\n",
+            "Epoch 13/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 0.8171 - accuracy: 0.7300\n",
+            "Epoch 13: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.8151 - accuracy: 0.7299 - val_loss: 1.4286 - val_accuracy: 0.4596\n",
+            "Epoch 14/100\n",
+            "76/81 [===========================>..] - ETA: 0s - loss: 0.7388 - accuracy: 0.7566\n",
+            "Epoch 14: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 12ms/step - loss: 0.7370 - accuracy: 0.7579 - val_loss: 1.4488 - val_accuracy: 0.4581\n",
+            "Epoch 15/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 0.6847 - accuracy: 0.7796\n",
+            "Epoch 15: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.6834 - accuracy: 0.7800 - val_loss: 1.4607 - val_accuracy: 0.4627\n",
+            "Epoch 16/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 0.6676 - accuracy: 0.7788\n",
+            "Epoch 16: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.6677 - accuracy: 0.7792 - val_loss: 1.5116 - val_accuracy: 0.4425\n",
+            "Epoch 17/100\n",
+            "78/81 [===========================>..] - ETA: 0s - loss: 0.5995 - accuracy: 0.8045\n",
+            "Epoch 17: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.5989 - accuracy: 0.8053 - val_loss: 1.5018 - val_accuracy: 0.4519\n",
+            "Epoch 18/100\n",
+            "79/81 [============================>.] - ETA: 0s - loss: 0.5774 - accuracy: 0.8204\n",
+            "Epoch 18: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.5751 - accuracy: 0.8208 - val_loss: 1.5333 - val_accuracy: 0.4394\n",
+            "Epoch 19/100\n",
+            "77/81 [===========================>..] - ETA: 0s - loss: 0.5411 - accuracy: 0.8356\n",
+            "Epoch 19: val_loss did not improve from 1.38663\n",
+            "81/81 [==============================] - 1s 11ms/step - loss: 0.5441 - accuracy: 0.8340 - val_loss: 1.5644 - val_accuracy: 0.4488\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "<keras.callbacks.History at 0x7f19960f4190>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 33
+        }
+      ],
+      "source": [
+        "checkpointer = ModelCheckpoint(filepath='weights.best.from_scratch_last_layers.hdf5', \n",
+        "                               verbose=1, save_best_only=True)\n",
+        "\n",
+        "stopper = EarlyStopping(monitor='val_loss',\n",
+        "                              min_delta=0,\n",
+        "                              patience=10,\n",
+        "                              verbose=0, mode='auto')\n",
+        "\n",
+        "# model.fit_generator(dataLoader(\"drive/MyDrive/Music3000\",32), epochs=100, validation_split = 0.2,callbacks=[checkpointer,stopper], verbose=1, shuffle=False)\n",
+        "\n",
+        "model.fit(X_train,y_train,epochs=100,batch_size=32,validation_split = 0.2,callbacks=[checkpointer,stopper], verbose=1, shuffle=False)\n",
+        "# model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=1)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "S0fY0M9EteY0",
+        "outputId": "fab2a58e-d3fd-412f-df72-5dfe954f44a1"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([2, 3, 1, ..., 6, 5, 5])"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 34
+        }
+      ],
+      "source": [
+        "y_train"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "QW1a4g8jtfPE"
+      },
+      "outputs": [],
+      "source": [
+        ""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "I94u-pAvCJmE",
+        "outputId": "aba6fb91-549a-4cb5-bbce-ca5938ad9a7d"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "26/26 - 0s - loss: 1.4751 - accuracy: 0.4708 - 161ms/epoch - 6ms/step\n"
+          ]
+        }
+      ],
+      "source": [
+        "test_loss, test_acc = model.evaluate(X_test, y_test, verbose=2)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "UqTK6NXSQqlm",
+        "outputId": "e432abe8-af0b-46d1-9d39-72d88bf00d48"
+      },
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "0.4708074629306793"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 36
+        }
+      ],
+      "source": [
+        "#3 hidden layers\n",
+        "test_acc"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "K0pCJvaJQt9O",
+        "outputId": "b99910bb-e1c9-4a15-fb10-3277fe214c35"
+      },
+      "outputs": [
+        {
+          "data": {
+            "text/plain": [
+              "0.48379629850387573"
+            ]
+          },
+          "execution_count": 87,
+          "metadata": {},
+          "output_type": "execute_result"
+        }
+      ],
+      "source": [
+        "#2 hidden layers\n",
+        "test_acc"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "S-FiNzQaEJew",
+        "outputId": "1a9bb6ee-d1c5-419f-ea1e-522f95fd5e94"
+      },
+      "outputs": [
+        {
+          "data": {
+            "text/plain": [
+              "0.47614315152168274"
+            ]
+          },
+          "execution_count": 26,
+          "metadata": {},
+          "output_type": "execute_result"
+        }
+      ],
+      "source": [
+        "#mfcc 4000 songs\n",
+        "test_acc"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "RX9EcmYtiV_k"
+      },
+      "outputs": [],
+      "source": [
+        ""
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "**Using Dataloaders**"
+      ],
+      "metadata": {
+        "id": "T7utM6-bV8hw"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import tensorflow as tf\n",
+        "import pandas as pd\n",
+        "import os\n",
+        "import librosa"
+      ],
+      "metadata": {
+        "id": "jfvfJQgdWBHz"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "ds = tf.data.Dataset.list_files(\"drive/MyDrive/MusicFiles/*\", shuffle=False)\n",
+        "\n",
+        "for file in ds.take(3):\n",
+        "  print(file.numpy())"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "UqoPPo2dEoWp",
+        "outputId": "48d9e449-46f5-49f4-a4a3-07e33b2b3ba6"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "b'drive/MyDrive/MusicFiles/blues.00000.wav'\n",
+            "b'drive/MyDrive/MusicFiles/blues.00001.wav'\n",
+            "b'drive/MyDrive/MusicFiles/blues.00002.wav'\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "id": "5N6lN5rITJKu",
+        "outputId": "f3ffc7d4-cdc7-42be-b97a-b5298105a6fb",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Mounted at /content/drive\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df = pd.read_csv('Kaggle1000.csv')\n",
+        "print(df) "
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "PTH0-jSSHJl9",
+        "outputId": "a116c33f-6dc0-4b39-b546-9b7d41c5d795"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "               Title  Artist  Key  Tempo  Genre  Album  Grouping  Date Added  \\\n",
+            "0       hiphop.00085     NaN   6A    111    NaN    NaN       NaN  26-04-2022   \n",
+            "1    classical.00006     NaN   5A     98    NaN    NaN       NaN  26-04-2022   \n",
+            "2       hiphop.00065     NaN  10A     96    NaN    NaN       NaN  26-04-2022   \n",
+            "3       reggae.00034     NaN   5A    126    NaN    NaN       NaN  26-04-2022   \n",
+            "4    classical.00064     NaN   1A    103    NaN    NaN       NaN  26-04-2022   \n",
+            "..               ...     ...  ...    ...    ...    ...       ...         ...   \n",
+            "994      blues.00037     NaN   4A    149    NaN    NaN       NaN  26-04-2022   \n",
+            "995     reggae.00096     NaN   8B     89    NaN    NaN       NaN  26-04-2022   \n",
+            "996    country.00003     NaN   9B    160    NaN    NaN       NaN  26-04-2022   \n",
+            "997       rock.00015     NaN   6A    105    NaN    NaN       NaN  26-04-2022   \n",
+            "998  classical.00086     NaN   5B    101    NaN    NaN       NaN  26-04-2022   \n",
+            "\n",
+            "                                              Location         Comment  Year  \\\n",
+            "0    C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   6A - Energy 7   NaN   \n",
+            "1    C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   5A - Energy 2   NaN   \n",
+            "2    C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...  10A - Energy 5   NaN   \n",
+            "3    C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   5A - Energy 6   NaN   \n",
+            "4    C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   1A - Energy 2   NaN   \n",
+            "..                                                 ...             ...   ...   \n",
+            "994  C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   4A - Energy 4   NaN   \n",
+            "995  C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   8B - Energy 4   NaN   \n",
+            "996  C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   9B - Energy 6   NaN   \n",
+            "997  C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   6A - Energy 4   NaN   \n",
+            "998  C:\\Users\\91620\\Downloads\\MusicFiles-20220426T1...   5B - Energy 4   NaN   \n",
+            "\n",
+            "     Overall Volume  Energy  CuePoints  ClippedPeaks  \n",
+            "0        -18.783381       7          1             0  \n",
+            "1        -28.380450       2          5             0  \n",
+            "2        -12.095982       5          5             0  \n",
+            "3        -20.624276       6          1             0  \n",
+            "4        -34.558694       2          1             0  \n",
+            "..              ...     ...        ...           ...  \n",
+            "994      -21.534668       4          1             0  \n",
+            "995      -15.030197       4          5             0  \n",
+            "996      -13.596679       6          1             0  \n",
+            "997      -20.055455       4          1             0  \n",
+            "998      -28.696482       4          1             0  \n",
+            "\n",
+            "[999 rows x 15 columns]\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "map={}"
+      ],
+      "metadata": {
+        "id": "zCQgdLRGITaY"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for i in range(len(df)) :\n",
+        "  s = df.loc[i, \"Title\"]\n",
+        "  s=s+'.wav'\n",
+        "  #print(s)\n",
+        "  map[s]= df.loc[i, \"Energy\"]-1"
+      ],
+      "metadata": {
+        "id": "TqYa7UvFIWZs"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "len(ds)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "VMTPOGyaIYgq",
+        "outputId": "d32d00d7-2834-4929-9bf6-f8942374aa9c"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "999"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 7
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_size = int(len(ds)*0.8)\n",
+        "\n",
+        "\n",
+        "train_ds = ds.take(train_size)\n",
+        "test_ds = ds.skip(train_size)"
+      ],
+      "metadata": {
+        "id": "3-qOMVT1Id14"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "len(train_ds)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ut28UdZXI3tM",
+        "outputId": "1fffed3b-4c88-4f9c-de95-bfbad812f403"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "799"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 9
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        ""
+      ],
+      "metadata": {
+        "id": "Br0SJ7_TI7ua"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def process_audio(file_path):\n",
+        "  # print(file_path)\n",
+        "  # for x in file_path:\n",
+        "  #   print(x)\n",
+        "  # x= tf.strings.split(file_path, os.path.sep)[-1]\n",
+        "  # print(type(x))\n",
+        "  x= file_path.numpy()\n",
+        "  x= bytes.decode(file_path.numpy())\n",
+        "  x= x.split(\"/\")[-1]\n",
+        "  value = map[x]\n",
+        "\n",
+        "  feature=[1,2,3,4]\n",
+        "\n",
+        "  featureLists=[]\n",
+        "  x , sr = librosa.load(bytes.decode(file_path.numpy()))\n",
+        "  \n",
+        "  mfcc = librosa.feature.mfcc(x, sr).ravel()\n",
+        "  # spectogram =librosa.feature.melspectrogram(x, sr).ravel()\n",
+        "  \n",
+        "  for x in mfcc:\n",
+        "    featureLists.append(x)\n",
+        "  \n",
+        "  return featureLists, value"
+      ],
+      "metadata": {
+        "id": "0Mifb2Pykig3"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "trainsample = train_ds.map(lambda x: tf.py_function(process_audio, [x], Tout=[tf.float64, tf.int64])).take(20)"
+      ],
+      "metadata": {
+        "id": "rYdTpelzcOuZ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "testsample = test_ds.map(lambda x: tf.py_function(process_audio, [x], Tout=[tf.int64, tf.float64])).take(5)"
+      ],
+      "metadata": {
+        "id": "pADbeywaldKC"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for x,y in trainsample:\n",
+        "  # print(type(x),type(y))\n",
+        "  print(tf.size(x))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "7AjVSaBlh2aT",
+        "outputId": "62b1d248-d15e-42e8-b38f-fffd2bc64f3e"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n",
+            "tf.Tensor(25860, shape=(), dtype=int32)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import tensorflow.keras as keras\n",
+        "def build_model(input_shape):\n",
+        "    \"\"\"Generates CNN model\n",
+        "    :param input_shape (tuple): Shape of input set\n",
+        "    :return model: CNN model\n",
+        "    \"\"\"\n",
+        "\n",
+        "    # build network topology\n",
+        "    model = keras.Sequential()\n",
+        "\n",
+        "    # 1st conv layer\n",
+        "    model.add(keras.layers.Conv1D(32, 3, activation='relu', input_shape=input_shape))\n",
+        "    model.add(keras.layers.MaxPooling1D(3, strides=2, padding='same'))\n",
+        "    model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # 2nd conv layer\n",
+        "    # model.add(keras.layers.Conv2D(32, (3, 3), activation='relu'))\n",
+        "    # model.add(keras.layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same'))\n",
+        "    # model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # 3rd conv layer\n",
+        "    model.add(keras.layers.Conv1D(32, 2, activation='relu'))\n",
+        "    model.add(keras.layers.MaxPooling1D(2, strides=2, padding='same'))\n",
+        "    # model.add(keras.layers.BatchNormalization())\n",
+        "\n",
+        "    # flatten output and feed it into dense layer\n",
+        "    model.add(keras.layers.Flatten())\n",
+        "    model.add(keras.layers.Dense(64, activation='relu'))\n",
+        "    model.add(keras.layers.Dropout(0.3))\n",
+        "\n",
+        "    # output layer\n",
+        "    model.add(keras.layers.Dense(10, activation='softmax'))\n",
+        "\n",
+        "    return model"
+      ],
+      "metadata": {
+        "id": "68EetpwvOppy"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "input_shape = (25860, 1) #0,1,2,3 \n",
+        "model = build_model(input_shape)\n",
+        "\n",
+        "# compile model\n",
+        "optimiser = keras.optimizers.Adam(learning_rate=0.0001)\n",
+        "model.compile(optimizer=optimiser, loss='sparse_categorical_crossentropy', metrics=['accuracy'])\n",
+        "\n",
+        "model.summary()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "d34VGPi0l1m_",
+        "outputId": "d526f8ff-8d68-4337-a221-a50f9a440dc9"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"sequential\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " conv1d (Conv1D)             (None, 25858, 32)         128       \n",
+            "                                                                 \n",
+            " max_pooling1d (MaxPooling1D  (None, 12929, 32)        0         \n",
+            " )                                                               \n",
+            "                                                                 \n",
+            " batch_normalization (BatchN  (None, 12929, 32)        128       \n",
+            " ormalization)                                                   \n",
+            "                                                                 \n",
+            " conv1d_1 (Conv1D)           (None, 12928, 32)         2080      \n",
+            "                                                                 \n",
+            " max_pooling1d_1 (MaxPooling  (None, 6464, 32)         0         \n",
+            " 1D)                                                             \n",
+            "                                                                 \n",
+            " flatten (Flatten)           (None, 206848)            0         \n",
+            "                                                                 \n",
+            " dense (Dense)               (None, 64)                13238336  \n",
+            "                                                                 \n",
+            " dropout (Dropout)           (None, 64)                0         \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 10)                650       \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 13,241,322\n",
+            "Trainable params: 13,241,258\n",
+            "Non-trainable params: 64\n",
+            "_________________________________________________________________\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# checkpointer = ModelCheckpoint(filepath='weights.best.from_scratch_last_layers.hdf5', \n",
+        "#                                verbose=1, save_best_only=True)\n",
+        "\n",
+        "# stopper = EarlyStopping(monitor='val_loss',\n",
+        "#                               min_delta=0,\n",
+        "#                               patience=10,\n",
+        "#                               verbose=0, mode='auto')\n",
+        "\n",
+        "# model.fit_generator(dataLoader(\"drive/MyDrive/Music3000\",32), epochs=100, validation_split = 0.2,callbacks=[checkpointer,stopper], verbose=1, shuffle=False)\n",
+        "\n",
+        "model.fit(trainsample,epochs=100,batch_size=5,verbose=1)\n",
+        "# model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=1)"
+      ],
+      "metadata": {
+        "id": "IV4n_5LjIwPk",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 779
+        },
+        "outputId": "7c33e901-c071-40ea-8209-01afc46cf562"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/100\n"
+          ]
+        },
+        {
+          "output_type": "error",
+          "ename": "ValueError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mValueError\u001b[0m                                Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-16-45d0c3405085>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      9\u001b[0m \u001b[0;31m# model.fit_generator(dataLoader(\"drive/MyDrive/Music3000\",32), epochs=100, validation_split = 0.2,callbacks=[checkpointer,stopper], verbose=1, shuffle=False)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     10\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 11\u001b[0;31m \u001b[0mmodel\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfit\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtrainsample\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mepochs\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m100\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mbatch_size\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m5\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mverbose\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     12\u001b[0m \u001b[0;31m# model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=1)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/keras/utils/traceback_utils.py\u001b[0m in \u001b[0;36merror_handler\u001b[0;34m(*args, **kwargs)\u001b[0m\n\u001b[1;32m     65\u001b[0m     \u001b[0;32mexcept\u001b[0m \u001b[0mException\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m  \u001b[0;31m# pylint: disable=broad-except\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     66\u001b[0m       \u001b[0mfiltered_tb\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0m_process_traceback_frames\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0me\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m__traceback__\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 67\u001b[0;31m       \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mwith_traceback\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfiltered_tb\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     68\u001b[0m     \u001b[0;32mfinally\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     69\u001b[0m       \u001b[0;32mdel\u001b[0m \u001b[0mfiltered_tb\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/tensorflow/python/framework/func_graph.py\u001b[0m in \u001b[0;36mautograph_handler\u001b[0;34m(*args, **kwargs)\u001b[0m\n\u001b[1;32m   1145\u001b[0m           \u001b[0;32mexcept\u001b[0m \u001b[0mException\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m  \u001b[0;31m# pylint:disable=broad-except\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1146\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mhasattr\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0me\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m\"ag_error_metadata\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1147\u001b[0;31m               \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mag_error_metadata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mto_exception\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0me\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1148\u001b[0m             \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1149\u001b[0m               \u001b[0;32mraise\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mValueError\u001b[0m: in user code:\n\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/training.py\", line 1021, in train_function  *\n        return step_function(self, iterator)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/training.py\", line 1010, in step_function  **\n        outputs = model.distribute_strategy.run(run_step, args=(data,))\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/training.py\", line 1000, in run_step  **\n        outputs = model.train_step(data)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/training.py\", line 864, in train_step\n        return self.compute_metrics(x, y, y_pred, sample_weight)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/training.py\", line 957, in compute_metrics\n        self.compiled_metrics.update_state(y, y_pred, sample_weight)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/compile_utils.py\", line 438, in update_state\n        self.build(y_pred, y_true)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/compile_utils.py\", line 359, in build\n        self._metrics, y_true, y_pred)\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/compile_utils.py\", line 484, in _get_metric_objects\n        return [self._get_metric_object(m, y_t, y_p) for m in metrics]\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/compile_utils.py\", line 484, in <listcomp>\n        return [self._get_metric_object(m, y_t, y_p) for m in metrics]\n    File \"/usr/local/lib/python3.7/dist-packages/keras/engine/compile_utils.py\", line 505, in _get_metric_object\n        y_t_rank = len(y_t.shape.as_list())\n\n    ValueError: as_list() is not defined on an unknown TensorShape.\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "accelerator": "GPU",
+    "colab": {
+      "collapsed_sections": [],
+      "name": "mfccenergy4000_.ipynb",
+      "provenance": []
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
